@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Alert,
   FlatList,
@@ -9,10 +9,27 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const ListaDeCompras = () => {
+  const inputRef = useRef();
   const [novoItem, setNovoItem] = useState('');
   const [listaDeItens, setListaDeItens] = useState([]);
+
+  const clearStorage = async () => {
+    AsyncStorage.clear();
+  };
+
+  // clearStorage();
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('@listadecompras_unifor');
+      return jsonValue !== null ? JSON.parse(jsonValue) : [];
+    } catch (e) {
+      // error reading value
+    }
+  };
 
   const confirmarRemocao = id =>
     Alert.alert('Cuidado!', 'Deseja mesmo excluir esse item?', [
@@ -24,11 +41,19 @@ export const ListaDeCompras = () => {
       {text: 'Sim', onPress: () => removerItem(id)},
     ]);
 
-  const salvarItem = () => {
-    setListaDeItens([
+  const salvarItem = async () => {
+    const novosDados = [
       ...listaDeItens,
       {name: novoItem, id: listaDeItens.length},
-    ]);
+    ];
+    try {
+      const jsonValue = JSON.stringify(novosDados);
+      await AsyncStorage.setItem('@listadecompras_unifor', jsonValue);
+      setListaDeItens(novosDados);
+      inputRef.current.clear();
+    } catch (e) {
+      // saving error
+    }
   };
 
   const removerItem = id => {
@@ -36,11 +61,30 @@ export const ListaDeCompras = () => {
     setListaDeItens(novoArray);
   };
 
-  const renderItem = ({item}) => (
+  const renderItem = ({item, index}) => (
     <Pressable onPress={() => confirmarRemocao(item.id)}>
-      <Text style={styles.item}>{item.name}</Text>
+      <View
+        style={[
+          styles.itemContainer,
+          // eslint-disable-next-line react-native/no-inline-styles
+          {backgroundColor: index % 2 === 0 ? 'white' : '#efefef'},
+        ]}>
+        <Text style={styles.item}>{item.name}</Text>
+      </View>
     </Pressable>
   );
+
+  useEffect(() => {
+    // AsyncStorage.clear();
+
+    const getDadosAsyncStorage = async () => {
+      const dados = await getData();
+
+      setListaDeItens(dados);
+    };
+
+    getDadosAsyncStorage();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -48,6 +92,7 @@ export const ListaDeCompras = () => {
       <Text style={styles.title}>Lista de Compras</Text>
       <FlatList
         data={listaDeItens}
+        // contentContainerStyle={{paddingBottom: 40}}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -57,6 +102,7 @@ export const ListaDeCompras = () => {
         value={novoItem}
         onChangeText={setNovoItem}
         placeholder="Preciso de ..."
+        ref={inputRef}
       />
       <Pressable onPress={salvarItem}>
         <View style={styles.button}>
@@ -79,12 +125,15 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     width: '100%',
-    marginVertical: 16,
     backgroundColor: 'black',
+  },
+  itemContainer: {
+    paddingVertical: 16,
   },
   item: {fontSize: 20, color: 'black'},
   input: {
     padding: 16,
+    marginTop: 32,
     fontSize: 20,
     backgroundColor: '#efefef',
     borderRadius: 10,
