@@ -102,6 +102,7 @@ export const ListaDeCompras = () => {
         value={novoItem}
         onChangeText={setNovoItem}
         placeholder="Preciso de ..."
+        placeholderTextColor="#a9a9a9"
         ref={inputRef}
       />
       <Pressable onPress={salvarItem}>
@@ -115,12 +116,13 @@ export const ListaDeCompras = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, padding: 16},
+  container: {flex: 1, padding: 16, backgroundColor: 'white'},
   title: {
     marginTop: 16,
     marginBottom: 16,
     fontSize: 24,
     fontWeight: 'bold',
+    color: 'black',
   },
   separator: {
     height: 1,
@@ -137,6 +139,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     backgroundColor: '#efefef',
     borderRadius: 10,
+    color: 'black',
   },
   button: {
     marginTop: 16,
